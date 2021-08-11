@@ -6,3 +6,6 @@ api = "0.5"
 
 [[stacks]]
   id = "io.buildpacks.stacks.bionic"
+
+[[stacks]]
+id = "google"
