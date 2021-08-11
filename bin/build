@@ -58,7 +58,7 @@ echo " -> PATH is $PATH"
 echo " -> node version is $(node --version)"
 echo " -> yarn version is $(yarn --version)"
 
-echo "---> Clone code"
+echo "---> Get dependencies"
 
 # mkdir ~/.ssh/
 # echo "${id_rsa}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
@@ -70,7 +70,9 @@ echo "---> Clone code"
 
 # git submodule update --init --recursive --depth 1
 
-yarn config set cacheFolder $cache_layer/.yarn-cache
+yarn config set enableGlobalCache true
+yarn config set globalFolder $cache_layer/.yarn-cache
+# yarn config set cacheFolder $cache_layer/.yarn-cache
 # if [[ -e $cache_layer/compressed-cache.tgz ]]; then
 #   echo " -> using compressed cache file"
 #   mkdir .yarn/cache
@@ -89,11 +91,13 @@ yarn --inline-builds
 
 echo "---> Build"
 
+node -r ts-node/register update-workspace.ts ${workspace}
+cp -f package.min.json package.json
 yarn asuna-fix-berry
 bin/builder.sh ${builder_args}
 
 echo " -> clean code"
-rm -rf .yarn/cache
+# rm -rf .yarn/cache
 du -h -d 1 .
 
 exit 0
