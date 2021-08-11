@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "---> Asuna Buildpack"
+
+layers_dir="$1"
+env_dir="$2/env"
+plan_path="$3"
+
+cache_layer="$layers_dir"/cache
+mkdir -p "$cache_layer"
+echo -e 'cache = true' > "$cache_layer.toml"
+
+echo "---> Installing Node"
+
+# volta_layer_dir=${layers_dir}/volta
+# if [[ -f ${volta_layer_dir}.toml ]]; then
+#   cached_volta=1
+# fi
+
+# VOLTA_HOME=$volta_layer_dir
+# PATH="$PATH":$volta_layer_dir/bin
+VOLTA_HOME=~/.volta
+PATH="$PATH":$VOLTA_HOME/bin
+
+echo ' -> --'
+ls -lh $cache_layer
+du -h -d 1 $cache_layer
+echo ' -> --'
+
+# rm ${layers_dir}/volta.toml
+rm -rf $cache_layer/.yarn-cache
+
+if [[ -e $cache_layer/volta.sh ]]; then
+#   ./$cache_layer/volta.sh --skip-setup
+  echo ' -> volta.sh exists.'
+else
+  curl https://get.volta.sh -o $cache_layer/volta.sh
+  chmod +x $cache_layer/volta.sh
+fi
+$cache_layer/volta.sh --skip-setup
+
+# if [[ ! ${cached_volta:-0} ]]; then
+#   # mkdir -p $volta_layer_dir
+#   cat > "${volta_layer_dir}.toml" << EOF
+# launch = true
+# build = true
+# cache = true
+# EOF
+#  curl https://get.volta.sh | bash -s -- --skip-setup
+# fi
+volta install node --verbose
+volta install yarn --verbose
+
+echo " -> VOLTA_HOME is $VOLTA_HOME"
+echo " -> PATH is $PATH"
+echo " -> node version is $(node --version)"
+echo " -> yarn version is $(yarn --version)"
+
+echo "---> Clone code"
+
+# mkdir ~/.ssh/
+# echo "${id_rsa}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+# touch ~/.ssh/known_hosts
+# ssh-keyscan github.com >> ~/.ssh/known_hosts
+# git clone git@github.com:${repo}.git --branch ${branch} --single-branch --depth 1 . \
+#     && ([[ ${with_submodules} == 1 ]] && git submodule update --init --recursive --depth 1) || true \
+#     && rm -rf .git
+
+# git submodule update --init --recursive --depth 1
+
+yarn config set cacheFolder $cache_layer/.yarn-cache
+# if [[ -e $cache_layer/compressed-cache.tgz ]]; then
+#   echo " -> using compressed cache file"
+#   mkdir .yarn/cache
+#   echo " -> list files"
+#   du -h -d 1 .yarn
+#   echo " -> extract cache"
+#   tar xf $cache_layer/compressed-cache.tgz --directory=.yarn/cache
+#   echo " -> list files"
+#   du -h -d 1 .yarn
+# fi
+yarn --inline-builds
+
+# echo " -> compress cache folder"
+# tar -czf compressed-cache.tgz -C ./.yarn/cache .
+# mv compressed-cache.tgz $cache_layer/compressed-cache.tgz
+
+echo "---> Build"
+
+yarn asuna-fix-berry
+bin/builder.sh ${builder_args}
+
+echo " -> clean code"
+rm -rf .yarn/cache
+du -h -d 1 .
+
+exit 0
