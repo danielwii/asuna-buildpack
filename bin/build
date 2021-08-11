@@ -30,7 +30,7 @@ du -h -d 1 $cache_layer
 echo ' -> --'
 
 # rm ${layers_dir}/volta.toml
-rm -rf $cache_layer/.yarn-cache
+# rm -rf $cache_layer/.yarn-cache
 
 if [[ -e $cache_layer/volta.sh ]]; then
 #   ./$cache_layer/volta.sh --skip-setup
